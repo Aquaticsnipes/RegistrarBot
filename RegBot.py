@@ -18,13 +18,21 @@ async def hello(message):
 # prints list of bot commands
 # @parameter message object
 async def assistance(message):
-    msg = ('!hello - say hello to me\n'
-        '!addRole roleName - gives bot permission to assign role\n'
-        '!clearRoles - removes all assigning permisions from bot\n'
-        '!wake - bring me online\n'
-        '!help - get this list\n'
-        '!newroom - create a new private channel\n'
-        '!enroll roleName, roleNamem, etc - will assign you access to your class channels')
+    msg = ('General Commands:\n'
+        '\t!help - get this list\n'
+        '\t!hello - say hello to me\n'
+        '\t!enroll roleName, roleNamem, etc - will assign you access to your class channels\n'
+        '\t!newroom - create a new private channel')
+
+    if message.author.server_permissions.administrator:
+        msg = msg + ('\n\nAdmin commands:\n'
+            '\t!addRole roleName - gives bot permission to assign role\n'
+            '\t!clearRoles - removes all assigning permisions from bot\n'
+            '\t======Bot Control=========\n'
+            '\t!wake - bring me online\n'
+            '\t!sleep - change bot to offline status\n'
+            '\t!kill - end bots process')
+
     await regBot.send_message(message.channel, msg)
 
 # reads in roles from {servername}Roles.txt file
@@ -43,16 +51,18 @@ async def enroll(message):
 
         validateRoles = f.readline()
         validateRoles = validateRoles.split(',')
-        print(validateRoles)
+
+
         for x in roles:
             for i in validateRoles:
+                # I should not start with a space, so any server roles should not have
+                # a space as their first character
                 if i.startswith(' '):
                     i = i.split(" ", 1)[1]
                 x = x.replace(" ", "")
                 temp = i
                 temp = temp.replace(" ", "")
-                print(x)
-                print(temp)
+
                 if x == temp:
                     role = discord.utils.get(message.server.roles, name=i)
                     await regBot.add_roles(message.author, role)
@@ -73,18 +83,26 @@ async def enroll(message):
 # file is saves as {servername}Roles.txt
 # @parameter message object
 async def addRole(message):
+    temp = True
     try:
         filename = '{}Roles.txt'.format(message.server)
         f = open('{}'.format(filename), 'a')
         roleString = message.content.split(" ",1)
-        f.write('{},'.format(roleString[1]))
-        f.close()
-        msg = '{0.author.mention}, the role has been added succesfully.'.format(message)
-        await regBot.send_message(message.channel, msg)  
-        
+        for x in message.server.roles:
+            print()
+            if x.name == roleString[1] and x.permissions.administrator:
+                msg = 'Sorry {0.author.mention}, for safety reason I can not be allowed to assign roles with admin powers'.format(message)
+                await regBot.send_message(message.channel, msg)
+                temp = False
 
+        if temp == True:
+            f.write('{},'.format(roleString[1]))
+            f.close()
+            msg = '{0.author.mention}, the role has been added succesfully.'.format(message)
+            await regBot.send_message(message.channel, msg)  
+        
     except:
-        msg = 'Sorry {0.author.mention}, I am having difficulties processing your requrest.'.format(message)
+        msg = 'Sorry {0.author.mention}, I am having difficulties processing your request.'.format(message)
         await regBot.send_message(message.channel, msg)        
 
 # overwrites previous roles file for the server.
@@ -95,6 +113,12 @@ async def clearRoles(message):
         f.close()
         msg = '{0.author.mention}, I now have no roles to grant people.'.format(message)
         await regBot.send_message(message.channel, msg)  
+
+#change status offline, online, away, or dnd
+async def myStatus(message):
+    print('do something')
+    # todo - change_presence message.author
+
 # this function is called when a message is sent in any server
 # this bot is present on
 # temporarily a driver for testing.  Dictionary needs added to do quicker command calls
