@@ -6,7 +6,7 @@ from discord.ext import commands
 import time
 import datetime
 
-TOKEN = 'NDk3MTkwODI2NTI3NTU1NTg2.DphPJw.zR5V3MXlHKKujwY2U7uYT2b7-Aw'
+TOKEN = ''
 
 client = discord.Client()
 
