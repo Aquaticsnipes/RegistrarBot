@@ -17,12 +17,14 @@ async def hello(message):
     
 # prints list of bot commands
 # @parameter message object
-async def help(message):
+async def assistance(message):
     msg = ('!hello - say hello to me\n'
+        '!addRole roleName - gives bot permission to assign role\n'
+        '!clearRoles - removes all assigning permisions from bot\n'
         '!wake - bring me online\n'
         '!help - get this list\n'
         '!newroom - create a new private channel\n'
-        '!enroll :class1,class2,class3,etc - will assign you access to your class channels')
+        '!enroll roleName, roleNamem, etc - will assign you access to your class channels')
     await regBot.send_message(message.channel, msg)
 
 # reads in roles from {servername}Roles.txt file
@@ -32,6 +34,7 @@ async def help(message):
 async def enroll(message):
     filename = '{}Roles.txt'.format(message.server)
     f = open('{}'.format(filename), 'r')
+    complete = False
 
     try:
         roles = message.content.split(" ",1)
@@ -43,13 +46,24 @@ async def enroll(message):
         print(validateRoles)
         for x in roles:
             for i in validateRoles:
+                if i.startswith(' '):
+                    i = i.split(" ", 1)[1]
+                x = x.replace(" ", "")
+                temp = i
+                temp = temp.replace(" ", "")
                 print(x)
-                print(i)
-                if x == i:
+                print(temp)
+                if x == temp:
                     role = discord.utils.get(message.server.roles, name=i)
                     await regBot.add_roles(message.author, role)
                     msg = '{0.author.mention}, you have been enrolled succesfully.'.format(message)
                     await regBot.send_message(message.channel, msg)
+                    complete = True
+        if complete == False:
+            msg = 'Sorry {0.author.mention}, I am having difficulties processing your requrest.'.format(message)
+            await regBot.send_message(message.channel, msg)
+
+
     except:
         msg = 'Sorry {0.author.mention}, I am having difficulties processing your requrest.'.format(message)
         await regBot.send_message(message.channel, msg)
@@ -84,16 +98,22 @@ async def clearRoles(message):
 # this function is called when a message is sent in any server
 # this bot is present on
 # temporarily a driver for testing.  Dictionary needs added to do quicker command calls
+# @parameter message object (passed in from discord)
 @regBot.event
 async def on_message(message):
-    if message.content.startswith('!addRole'):
-        await addRole(message)
-    elif message.content.startswith('!enroll'):
-        await enroll(message)
-    elif message.content.startswith('!hello'):
-        await hello(message)
-    elif message.content.startswith('!clearRoles'):
-        await clearRoles(message)
+
+    bot_commands = {
+        "!hello": hello,
+        "!help": assistance,
+        "!enroll": enroll,
+        "!addRole": addRole,
+        "!clearRoles": clearRoles
+    }
+
+    command = message.content.split()
+
+    if command[0] in bot_commands and message.author != regBot.user:
+        await bot_commands[command[0]](message)
 
 @regBot.event
 async def on_ready():
